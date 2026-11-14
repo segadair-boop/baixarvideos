@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a1020">
+  <meta name="description" content="Baixar Vídeos: uma interface para organizar links de mídia e baixar arquivos diretos, com apoio do Yoinks para plataformas de vídeo.">
+  <title>Baixar Vídeos · Master Sistemas</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="layout" id="inicio">
+    <aside class="sidebar" aria-label="Menu principal">
+      <a class="brand" href="#inicio" aria-label="Baixar Vídeos, início">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17.5V20h16v-2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="brand-name">BAIXAR<span>VÍDEOS</span><small>MASTER SISTEMAS</small></span>
+      </a>
+      <div class="sidebar-section-label">PAINEL</div>
+      <nav class="navigation" aria-label="Navegação">
+        <a href="#inicio" class="nav-item active"><span aria-hidden="true">▦</span> Visão geral</a>
+        <a href="#baixar" class="nav-item"><span aria-hidden="true">↓</span> Novo download</a>
+        <a href="#historico" class="nav-item"><span aria-hidden="true">◷</span> Histórico local</a>
+        <a href="#como-usar" class="nav-item"><span aria-hidden="true">?</span> Como funciona</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="privacy-card"><span class="privacy-dot"></span><div><strong>Privacidade local</strong><p>Seus links não são enviados para este site.</p></div></div>
+        <a class="sidebar-source" href="https://github.com/segadair-boop/baixarvideos" target="_blank" rel="noopener noreferrer">Código no GitHub <span aria-hidden="true">↗</span></a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="breadcrumb">Workspace <span>/</span> <strong>Baixar Vídeos</strong></div>
+        <div class="header-actions">
+          <span class="top-status"><span class="status-dot"></span> Interface web v1.0</span>
+          <button type="button" class="icon-button" id="theme-toggle" aria-label="Alternar tema" title="Alternar tema"><span id="theme-symbol" aria-hidden="true">☀</span></button>
+        </div>
+      </header>
+
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-line"></span> SUA CENTRAL DE MÍDIA</div>
+          <h1 id="hero-title">Seus vídeos.<br><span>Sem complicação.</span></h1>
+          <p>Organize links, baixe arquivos de mídia diretos e use o motor Yoinks para escolher formatos em plataformas de vídeo.</p>
+          <a class="hero-cta" href="#baixar">Começar agora <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+          <div class="art-play"><svg viewBox="0 0 24 24" fill="none"><path d="m9 5 11 7-11 7V5Z" fill="currentColor"/></svg></div>
+          <div class="art-download">↓</div>
+          <div class="art-spark spark-one">✦</div><div class="art-spark spark-two">✦</div>
+        </div>
+      </section>
+
+      <section class="overview" aria-label="Recursos da plataforma">
+        <article class="overview-item"><div class="overview-icon">↗</div><div><strong>Links de plataformas</strong><span>YouTube, Instagram, TikTok e outras</span></div></article>
+        <article class="overview-item"><div class="overview-icon">↓</div><div><strong>Mídia direta</strong><span>MP4, WebM, MOV, MP3 e mais</span></div></article>
+        <article class="overview-item"><div class="overview-icon">◈</div><div><strong>Sem conta</strong><span>Histórico somente neste navegador</span></div></article>
+      </section>
+
+      <div class="content-grid">
+        <section class="card downloader" id="baixar" aria-labelledby="download-title">
+          <div class="card-heading">
+            <div class="card-icon accent-icon">↓</div>
+            <div><span class="section-kicker">FERRAMENTA PRINCIPAL</span><h2 id="download-title">Novo download</h2></div>
+          </div>
+          <p class="card-description">Cole o endereço do vídeo ou arquivo para verificar qual opção está disponível.</p>
+          <form id="video-form" novalidate>
+            <label class="field-label" for="video-url">LINK DO VÍDEO OU ARQUIVO</label>
+            <div class="url-field">
+              <span class="url-leading" aria-hidden="true">↗</span>
+              <input id="video-url" name="video-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://exemplo.com/video.mp4" maxlength="4096" required>
+              <button id="paste-button" class="paste-button" type="button" title="Colar link da área de transferência">Colar</button>
+            </div>
+            <div class="validation" id="validation" aria-live="polite">Use um endereço completo começando com https://</div>
+            <button type="submit" class="primary-button" id="analyze-button"><span>Verificar link</span><span aria-hidden="true">→</span></button>
+          </form>
+          <div id="result" class="result hidden" aria-live="polite" aria-atomic="true">
+            <div class="result-heading"><span class="result-indicator" aria-hidden="true">✓</span><div><strong id="result-title">Link identificado</strong><span id="result-subtitle"></span></div></div>
+            <div class="result-url" id="result-url"></div>
+            <div class="result-actions">
+              <button id="result-primary" class="primary-button result-primary" type="button">Continuar</button>
+              <a id="result-secondary" href="#" target="_blank" rel="noopener noreferrer" class="secondary-button">Abrir original ↗</a>
+            </div>
+            <p class="result-note" id="result-note"></p>
+          </div>
+          <div class="platforms">
+            <span>IDENTIFICAÇÃO DE LINKS</span>
+            <div class="platform-chips"><span>YouTube</span><span>Instagram</span><span>TikTok</span><span>Facebook</span><span>X</span><span>+ outros</span></div>
+          </div>
+        </section>
+
+        <section class="card guide" id="como-usar" aria-labelledby="guide-title">
+          <div class="card-heading"><div class="card-icon">✧</div><div><span class="section-kicker">GUIA RÁPIDO</span><h2 id="guide-title">Como funciona?</h2></div></div>
+          <div class="steps">
+            <div class="step"><span class="step-num">01</span><div><strong>Cole o endereço</strong><p>Copie o link de uma mídia e insira no campo ao lado.</p></div></div>
+            <div class="step"><span class="step-num">02</span><div><strong>Verifique o tipo</strong><p>O sistema identifica links diretos e links de plataformas.</p></div></div>
+            <div class="step"><span class="step-num">03</span><div><strong>Escolha como baixar</strong><p>Arquivos diretos abrem no navegador. Para plataformas, use o comando Yoinks no computador.</p></div></div>
+          </div>
+          <div class="guide-note"><span aria-hidden="true">ⓘ</span><p><strong>Sobre esta versão:</strong> a Vercel hospeda a interface. Extração e conversão de vídeos de plataformas ainda não acontecem no servidor.</p></div>
+        </section>
+      </div>
+
+      <section class="card history" id="historico" aria-labelledby="history-title">
+        <div class="history-heading"><div class="card-heading"><div class="card-icon">◷</div><div><span class="section-kicker">SEU NAVEGADOR</span><h2 id="history-title">Links recentes</h2></div></div><button type="button" class="text-button" id="clear-history">Limpar histórico</button></div>
+        <div class="empty-state" id="history-empty"><span aria-hidden="true">◷</span><p>Seus links analisados aparecerão aqui.</p></div>
+        <ul class="history-list" id="history-list" aria-label="Links analisados recentemente"></ul>
+      </section>
+
+      <footer class="footer"><span>© Baixar Vídeos · Master Sistemas</span><span>Use somente vídeos próprios ou autorizados. <a href="https://github.com/pablostanley/yoinks" target="_blank" rel="noopener noreferrer">Motor Yoinks ↗</a></span></footer>
+    </main>
+  </div>
+  <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
