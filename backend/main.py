@@ -299,3 +299,83 @@ async def download_file(job_id: str):
         filename=filename,
         headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"},
     )
+
+
+# Modo Vercel: processamento + entrega no mesmo request. Funções stateless
+# não podem guardar tarefas em memória entre requests diferentes.
+@app.get("/api/download")
+async def download_once(request: Request, url: str, quality: str = "video_720"):
+    import asyncio
+    from starlette.background import BackgroundTask
+    target = validated_url(url)
+    if quality not in FORMATS:
+        raise HTTPException(400, detail="Qualidade inválida.")
+    cleanup_expired()
+
+    # Não confiar em cabeçalhos X-Forwarded-For fornecidos diretamente pelo cliente.
+    client_ip = request.client.host if request.client else "unknown"
+    with _lock:
+        now = time.time()
+        counts = _rate[client_ip]
+        while counts and now - counts[0] > RATE_WINDOW_SECONDS:
+            counts.popleft()
+        if len(counts) >= RATE_LIMIT:
+            raise HTTPException(429, detail="Limite de tentativas atingido para esta conexão.")
+        counts.append(now)
+
+    folder = Path(tempfile.mkdtemp(prefix="vercel-download-", dir=DOWNLOAD_ROOT))
+
+    def prepare_download():
+        opts = {
+            **ydl_opts(), "format": FORMATS[quality],
+            "outtmpl": str(folder / "%(title).90s.%(id)s.%(ext)s"),
+            "restrictfilenames": True,
+            "merge_output_format": "mp4",
+            "overwrites": False,
+        }
+        if quality == "audio_mp3":
+            opts["postprocessors"] = [
+                {"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}
+            ]
+        with yt_dlp.YoutubeDL(opts) as engine:
+            data = engine.extract_info(target, download=True)
+        if not isinstance(data, dict):
+            raise RuntimeError("Vídeo indisponível.")
+        duration = data.get("duration") or 0
+        if duration > MAX_DURATION_SECONDS:
+            raise RuntimeError("A duração ultrapassa 60 minutos.")
+        files = sorted(
+            (p for p in folder.iterdir() if p.is_file()
+             and p.suffix.lower() not in {".part", ".ytdl", ".json"}),
+            key=lambda p: p.stat().st_size, reverse=True,
+        )
+        if not files:
+            raise RuntimeError("O processamento não gerou um arquivo.")
+        if files[0].stat().st_size > MAX_FILE_BYTES:
+            raise RuntimeError("Arquivo maior que o limite de 350 MB.")
+        return files[0]
+
+    try:
+        # Vercel (plano Hobby): normalmente até 300 segundos por invocação.
+        file = await asyncio.wait_for(asyncio.to_thread(prepare_download), timeout=240)
+    except TimeoutError:
+        shutil.rmtree(folder, ignore_errors=True)
+        raise HTTPException(504, detail="O download demorou demais. Tente menor qualidade.")
+    except Exception as exc:
+        shutil.rmtree(folder, ignore_errors=True)
+        logger.warning("Download on Vercel failed: %s", type(exc).__name__)
+        message = str(exc).splitlines()[-1][:220] if str(exc) else "Não foi possível baixar o vídeo."
+        if "Sign in to confirm" in message or "cookies" in message.lower():
+            message = "A plataforma exige login ou verificação; este vídeo não pode ser baixado automaticamente."
+        if "/tmp/" in message:
+            message = "A plataforma não conseguiu processar este arquivo."
+        raise HTTPException(422, detail=message)
+
+    # FileResponse é streaming, não serializa um vídeo inteiro em JSON.
+    return FileResponse(
+        path=file,
+        filename=file.name,
+        media_type=mimetypes.guess_type(file.name)[0] or "application/octet-stream",
+        headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"},
+        background=BackgroundTask(shutil.rmtree, folder, ignore_errors=True),
+    )
